@@ -4,25 +4,31 @@ function SearchBar({ onSearch }) {
 
     const [query, setQuery] = useState(''); 
 
-    const handleChange = (event) => {
-        setQuery(event.target.value);
+    const handleInputChange = (e) => {
+        setQuery(e.target.value);
     };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
+    const handleSearch = () => {
         onSearch(query);
     };
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
     return (
-        <form onSubmit={handleSubmit}>
+        <div className='search-bar'>
             <input 
-                type='text' 
-                placeholder='Search for a song...'
-                value={query}
-                onChange={handleChange}
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder='Search for a song or artist'
             />
-            <button type='submit'>Search</button>
-        </form>
+            <button onClick={handleSearch}>Search</button>
+        </div>
     )
 }
 
