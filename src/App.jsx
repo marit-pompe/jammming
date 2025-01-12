@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import SearchBar from './components/SearchBar/SearchBar';
+import SearchBar from './components/SearchBar';
+import styles from './styles/App.module.css';
 
 function App() {
 
