@@ -1,33 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SearchBar from './components/SearchBar/SearchBar';
 import SearchResults from './components/SearchResults/SearchResults';
 import Playlist from './components/Playlist/Playlist';
+import { getAuthorizationUrl, getAccessTokenFromUrl, storeAccessToken, getStoredAccessToken, isAccessTokenValid  } from './components/Spotify/Spotify';
 import './App.module.css';
 
 function App() {
-
+    const [accessToken, setAccessToken] = useState(null);
     const [searchResults, setSearchResults] = useState([]);
-
     const [playlist, setPlaylist] = useState([]);
-
     const [playlistName, setPlaylistName] = useState('New Playlist');
 
-    const MOCK_TRACKS = [
-        { id: 1, name: 'Song 1', artist: 'Artist 1', album: 'Album 1', uri: 'spotify:track:1' },
-        { id: 2, name: 'Song 2', artist: 'Artist 2', album: 'Album 2', uri: 'spotify:track:2' },
-        { id: 3, name: 'Song 3', artist: 'Artist 3', album: 'Album 3', uri: 'spotify:track:3' },
-        { id: 4, name: 'Song 4', artist: 'Artist 4', album: 'Album 4', uri: 'spotify:track:4' },
-    ]
-    
-    const handleSearch = (query) => {
-        const filteredTracks = MOCK_TRACKS.filter(
-            (track) =>
-                track.name.toLowerCase().includes(query.toLowerCase()) ||
-                track.artist.toLowerCase().includes(query.toLowerCase()) ||
-                track.album.toLowerCase().includes(query.toLowerCase())           
-        );
-        setSearchResults(filteredTracks);
-    }
+    useEffect(() => {
+        const tokenFromUrl = getAccessTokenFromUrl();
+        if (tokenFromUrl) {
+            storeAccessToken(tokenFromUrl);
+            setAccessToken(tokenFromUrl);
+        } else {
+            const storedToken = getStoredAccessToken();
+            if (storedToken && isAccessTokenValid(storedToken)) {
+                setAccessToken(storedToken);
+            } else {
+                window.location.href = getAuthorizationUrl()
+            }
+        }
+    }, []);
+
+    const handleSearch = async (query) => {
+        if (!accessToken) return;
+
+        const endpoint = `https://api.spotify.com/v1/search?type=track&q=${encodeURIComponent(query)}`;
+
+        try {
+            const response = await fetch(endpoint, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch search results from Spotify');
+            }
+
+            const data = await response.json();
+            const tracks = data.tracks.items.map((track) => ({
+                id: track.id,
+                name: track.name,
+                artist: track.artists[0].name,
+                album: track.album.name,
+                uri: track.uri,
+            }));
+
+            setSearchResults(tracks);
+            } catch (error) {
+                console.error('Error fetching search results:', error);
+                alert('An error occurred while searching for tracks.');
+            }
+        };
 
     const addTrackToPlaylist = (track) => {
         if (!playlist.find((item) => item.id === track.id)) {
@@ -39,24 +69,85 @@ function App() {
         setPlaylist(playlist.filter((item) => item.id !== track.id));
     }
 
-    const savePlaylist = () => {
+    const savePlaylist = async () => {
         if (!playlistName || playlist.length === 0) {
             alert('Please provide a playlist name and add at least one track.');
             return;
         }
 
         const trackUris = playlist.map(track => track.uri);
-        console.log(`Saving playlist:`, { name: playlistName, uris: trackUris });
 
-        alert(`Playlist '${playlistName}' saved to Spotify!`);
+        try {
 
-        setPlaylist([]);
-        setPlaylistName('New Playlist');
+            const userResponse = await fetch('https://api.spotify.com/v1/me', {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+
+            if (!userResponse.ok) {
+                throw new Error('Failed to fetch user data');
+            }
+
+            const userData = await userResponse.json();
+            const userId = userData.id;
+
+            const createPlaylistResponse = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: playlistName,
+                description: 'My custom playlist',
+                public: true,
+                uris: trackUris,
+              }),
+            });
+
+            if (!createPlaylistResponse.ok) {
+                throw new Error('Failed to save the playlist');
+            }
+
+            const createdPlaylist = await createPlaylistResponse.json();
+
+            const addTracksResponse = await fetch(`https://api.spotify.com/v1/playlists/${createdPlaylist.id}/tracks`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    uris: trackUris,
+                }),
+            });
+
+            if (!addTracksResponse.ok) {
+                throw new Error('Faild to add tracks to playlist');
+            }
+
+            alert(`Playlist ${playlistName} saved to Spotify!`);
+            setPlaylist([]);
+            setPlaylistName('New Playlist');
+        } catch (error) {
+            console.error('Error saving playlist:', error);
+            alert('An error occurred while saving the playlist.');
+        }
     };
 
     return (
             <div className='app'>
                 <h1>Jammming App</h1>
+                {accessToken ? (
+                    <div>
+                        <h2>You are logged in!</h2>
+                    </div>
+                ) : (
+                    <div>
+                       <h2>Login with Spotify</h2> 
+                    </div>
+                )}
                 <SearchBar onSearch={handleSearch} />
                 <SearchResults 
                     searchResults={searchResults} 

@@ -5,19 +5,21 @@ function SearchBar({ onSearch }) {
 
     const [query, setQuery] = useState(''); 
 
+    const handleInputChange = (e) => {
+        setQuery(e.target.value);
+    };
 
     const handleSearch = () => {
-        if (onSearch) {
             onSearch(query);
-        }
     };
 
     return (
         <div className='search-bar'>
             <input 
-            placeholder='Search for a song, album or artist'
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+                type='text'
+                value={query}
+                onChange={handleInputChange}
+                placeholder='Search for a song, album or artist'
             />
             <button onClick={handleSearch}>Search</button>
         </div>
