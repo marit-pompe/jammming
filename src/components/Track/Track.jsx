@@ -1,7 +1,8 @@
 import './Track.module.css';
 
-function Track({ track, onAdd, onRemove, isRemoval }) {
+function Track({ track, onAdd, onRemove, isRemoval, handlePlayPause, playing }) {
 
+    console.log(track.preview_url);
     const handleAdd = () => {
         if (onAdd) {
             onAdd(track);
@@ -11,6 +12,12 @@ function Track({ track, onAdd, onRemove, isRemoval }) {
     const handleRemove = () => {
         if (onRemove) {
             onRemove(track);
+        }
+    };
+
+    const handlePlayClick = () => {
+        if (track.preview_url) {
+            handlePlayPause(track.preview_url);
         }
     };
 
@@ -26,6 +33,13 @@ function Track({ track, onAdd, onRemove, isRemoval }) {
                 <button onClick={handleRemove}>Remove</button>
             ) : (
                 <button onClick={handleAdd}>Add</button>
+            )}
+            {track.preview_url ? (
+                <button onClick={handlePlayClick}>
+                    {playing && playing.src === track.preview_url ? 'Pause' : 'Play'} 
+                </button>
+            ) : (
+                <span>No audio preview available</span>
             )}
         </div>
     );
