@@ -1,4 +1,5 @@
 import Tracklist from '../Tracklist/Tracklist';
+import './Playlist.module.css';
 
 function Playlist({ playlist, playlistName, onNameChange, onRemove, onSave }) {
     

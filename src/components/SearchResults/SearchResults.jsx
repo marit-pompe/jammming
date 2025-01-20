@@ -1,4 +1,5 @@
 import Tracklist from '../Tracklist/Tracklist';
+import './SearchResults.module.css';
 
 function SearchResults({ searchResults, onAdd }) {
     return (

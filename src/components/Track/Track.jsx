@@ -1,3 +1,5 @@
+import './Track.module.css';
+
 function Track({ track, onAdd, onRemove, isRemoval }) {
 
     const handleAdd = () => {
