@@ -1,5 +1,5 @@
 const authEndpoint = 'https://accounts.spotify.com/authorize';
-const tokenEndpoint = 'https://accounts.spotify.com/api/token';
+const tokenEndpoint = 'https://accounts.spotify.com/api/token'; 
 const clientId = process.env.REACT_APP_CLIENT_ID;
 const redirectUri = 'http://localhost:3000/';
 const scope = 'playlist-modify-public playlist-modify-private user-library-read';
